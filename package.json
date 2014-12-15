@@ -1,0 +1,37 @@
+{
+  "name": "gulpy",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "bluebird": "^2.3.11",
+    "body-parser": "^1.10.0",
+    "promised-mongo": "^0.11.1",
+    "synth": "^0.6.0"
+  },
+  "devDependencies": {
+    "gulp": "^3.8.10",
+    "gulp-changed": "^1.1.0",
+    "gulp-clean": "^0.3.1",
+    "gulp-coffee": "^2.2.0",
+    "gulp-concat": "^2.4.2",
+    "gulp-filter": "^1.0.2",
+    "gulp-jade": "^0.10.0",
+    "gulp-jade-inheritance": "^0.5.0",
+    "gulp-less": "^2.0.1",
+    "gulp-mocha": "^2.0.0",
+    "gulp-ng-annotate": "^0.4.3",
+    "gulp-rev": "^2.0.1",
+    "gulp-rimraf": "^0.1.1",
+    "gulp-ruby-sass": "^0.7.1",
+    "gulp-sass": "^1.2.4",
+    "gulp-uglify": "^1.0.2",
+    "gulp-util": "^3.0.1",
+    "gulp-watch": "^3.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
