@@ -15,16 +15,20 @@ gulp.task('assets', ['js', 'css']);
 gulp.task('prod-assets', ['prod-js', 'prod-css']);
 
 gulp.task('server', ['assets'], function () {
-
+  gulp.watch([jsGlob, coffeeGlob], ['js']);
+  gulp.watch([cssGlob, lessGlob, scssGlob, sassGlob], ['css']);
 });
 gulp.task('prod', ['prod-assets'], function () {
 
 });
 
 /* Prepare JS assets */
+var jsGlob = 'front/**/*.js';
+var coffeeGlob = 'front/**/*.coffee';
+
 function jsFiles () {
-  var jsFiles = gulp.src('front/**/*.js');
-  var coffeeFiles = gulp.src('front/**/*.coffee')
+  var jsFiles = gulp.src(jsGlob);
+  var coffeeFiles = gulp.src(coffeeGlob)
     .pipe(coffee({ bare: true }).on('error', gutil.log));
   return merge(jsFiles, coffeeFiles)
     .pipe(ngAnnotate());
@@ -44,11 +48,16 @@ gulp.task('js', ['cleanJS'], function () {
 });
 
 /* Prepare CSS assets */
+var cssGlob = 'front/**/*.css';
+var lessGlob = 'front/**/*.less';
+var sassGlob = 'front/**/*.sass';
+var scssGlob = 'front/**/*.scss';
+
 function cssFiles () {
-  var cssFiles = gulp.src('front/**/*.css');
-  var lessFiles = gulp.src('front/**/*.less')
+  var cssFiles = gulp.src(cssGlob);
+  var lessFiles = gulp.src(lessGlob)
     .pipe(less());
-  var sassFiles = gulp.src(['front/**/*.scss', 'front/**/*.sass'])
+  var sassFiles = gulp.src([scssGlob, sassGlob])
     .pipe(sass());
 
     return merge(cssFiles, lessFiles, sassFiles);
