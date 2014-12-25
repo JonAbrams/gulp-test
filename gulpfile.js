@@ -1,3 +1,6 @@
+var fs = require('fs');
+var Writable = require('stream').Writable;
+
 var gulp = require('gulp');
 var coffee = require('gulp-coffee');
 var gutil = require('gulp-util');
@@ -10,6 +13,7 @@ var less = require('gulp-less');
 var sass = require('gulp-sass');
 var minifyCSS = require('gulp-minify-css');
 var rev = require('gulp-rev');
+var symlink = require('gulp-symlink');
 
 gulp.task('assets', ['js', 'css']);
 gulp.task('prod-assets', ['prod-js', 'prod-css']);
@@ -81,4 +85,41 @@ gulp.task('cleanJS', function (done) {
 
 gulp.task('cleanCSS', function (done) {
   return del(['public/**/*.css'], done);
+});
+
+/* Create symlinks to misc folder */
+gulp.task('misc-ln', function () {
+  var linkHandler = function (destDir, options) {
+    var options = options || {};
+    var destDir = destDir || '';
+    var ws = Writable({ objectMode: true });
+
+    ws._write = function (chunk, enc, next) {
+      var base = chunk.base;
+      var filename = chunk.path.replace(base, '');
+      var destFilename = destDir + '/' + filename;
+
+      fs.symlink(chunk.path, destFilename, function (err) {
+        if (err) {
+          if (err.code === 'EEXIST') {
+            console.log('File exists at ' + destFilename +', skipping');
+          } else {
+            return next(err);
+          }
+        } else {
+          if (options.verbose) {
+            console.log(
+              "Linked " + destFilename + ' to ' + chunk.path.replace(base, '')
+            );
+          }
+        }
+        next();
+      });
+    }
+
+    return ws;
+  };
+
+  return gulp.src('front/misc/**/*')
+    .pipe(linkHandler('public', { verbose: true }));
 });
