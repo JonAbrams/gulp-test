@@ -14,41 +14,60 @@ var sass = require('gulp-sass');
 var minifyCSS = require('gulp-minify-css');
 var rev = require('gulp-rev');
 var symlink = require('gulp-symlink');
+var vfs = require('vinyl-fs');
+var through = require('through2');
+
+var jsFiles = [];
+var cssFiles = [];
+
+function addTo(arr) {
+  return through.obj(function (chunk, enc, done) {
+    arr.push(chunk.relative);
+    done();
+  });
+}
 
 gulp.task('assets', ['js', 'css']);
 gulp.task('prod-assets', ['prod-js', 'prod-css']);
 
-gulp.task('server', ['assets'], function () {
+gulp.task('server', ['assets', 'misc-ln'], function () {
   gulp.watch([jsGlob, coffeeGlob], ['js']);
   gulp.watch([cssGlob, lessGlob, scssGlob, sassGlob], ['css']);
+  gulp.watch('front/misc/**/*', ['misc-ln']);
+  console.log("jsFiles: ", jsFiles);
 });
 gulp.task('prod', ['prod-assets'], function () {
-
+  console.log("jsFiles: ", jsFiles);
 });
 
 /* Prepare JS assets */
 var jsGlob = 'front/**/*.js';
 var coffeeGlob = 'front/**/*.coffee';
+var bowerFilter = '!front/bower_components/**/*';
 
-function jsFiles () {
-  var jsFiles = gulp.src(jsGlob);
-  var coffeeFiles = gulp.src(coffeeGlob)
+function srcJsFiles () {
+  var jsFiles = gulp.src([jsGlob, bowerFilter]);
+  var coffeeFiles = gulp.src([coffeeGlob, bowerFilter])
     .pipe(coffee({ bare: true }).on('error', gutil.log));
   return merge(jsFiles, coffeeFiles)
     .pipe(ngAnnotate());
 }
 
 gulp.task('prod-js', ['cleanJS'], function () {
-  return jsFiles()
+  jsFiles = [];
+
+  return srcJsFiles()
     .pipe(uglify())
     .pipe(concat('main.js'))
     .pipe(rev())
-    .pipe(gulp.dest('./public'));
+    .pipe(gulp.dest('./public'))
+    .pipe(addTo(jsFiles));
 });
 
 gulp.task('js', ['cleanJS'], function () {
-  return jsFiles()
-    .pipe(gulp.dest('./public'));
+  return srcJsFiles()
+    .pipe(gulp.dest('./public'))
+    .pipe(addTo(jsFiles));
 });
 
 /* Prepare CSS assets */
@@ -57,7 +76,7 @@ var lessGlob = 'front/**/*.less';
 var sassGlob = 'front/**/*.sass';
 var scssGlob = 'front/**/*.scss';
 
-function cssFiles () {
+function srcCssFiles () {
   var cssFiles = gulp.src(cssGlob);
   var lessFiles = gulp.src(lessGlob)
     .pipe(less());
@@ -67,15 +86,17 @@ function cssFiles () {
     return merge(cssFiles, lessFiles, sassFiles);
 }
 gulp.task('prod-css', ['cleanCSS'], function () {
-  return cssFiles()
+  return srcCssFiles()
     .pipe(minifyCSS())
     .pipe(concat('main.css'))
     .pipe(rev())
-    .pipe(gulp.dest('./public'));
+    .pipe(gulp.dest('./public'))
+    .pipe(addTo(cssFiles));
 });
 gulp.task('css', ['cleanCSS'], function () {
-  return cssFiles()
-    .pipe(gulp.dest('./public'));
+  return srcCssFiles()
+    .pipe(gulp.dest('./public'))
+    .pipe(addTo(cssFiles));
 });
 
 /* Clean assets */
@@ -89,37 +110,6 @@ gulp.task('cleanCSS', function (done) {
 
 /* Create symlinks to misc folder */
 gulp.task('misc-ln', function () {
-  var linkHandler = function (destDir, options) {
-    var options = options || {};
-    var destDir = destDir || '';
-    var ws = Writable({ objectMode: true });
-
-    ws._write = function (chunk, enc, next) {
-      var base = chunk.base;
-      var filename = chunk.path.replace(base, '');
-      var destFilename = destDir + '/' + filename;
-
-      fs.symlink(chunk.path, destFilename, function (err) {
-        if (err) {
-          if (err.code === 'EEXIST') {
-            console.log('File exists at ' + destFilename +', skipping');
-          } else {
-            return next(err);
-          }
-        } else {
-          if (options.verbose) {
-            console.log(
-              "Linked " + destFilename + ' to ' + chunk.path.replace(base, '')
-            );
-          }
-        }
-        next();
-      });
-    }
-
-    return ws;
-  };
-
   return gulp.src('front/misc/**/*')
-    .pipe(linkHandler('public', { verbose: true }));
+    .pipe(vfs.symlink('public'));
 });
